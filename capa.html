@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!--#artifact-start-->
+<title>Editor de Capa de Revista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=Yellowtail&display=swap" />
+<style>
+  :root{
+    --bg:#EBE7E1;
+    --surface:#FFFFFF;
+    --surface-2:#F4F1EC;
+    --ink:#1B1917;
+    --ink-2:#6A635B;
+    --ink-3:#938B81;
+    --line:#DCD6CD;
+    --line-2:#C6BEB2;
+    --accent:#A82D17;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#F5E2DC;
+    --shadow:0 1px 2px rgba(27,25,23,.07), 0 10px 28px -14px rgba(27,25,23,.3);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171512;
+      --surface:#211E1B;
+      --surface-2:#2A2622;
+      --ink:#EFEBE5;
+      --ink-2:#A79F94;
+      --ink-3:#7E766C;
+      --line:#332E29;
+      --line-2:#443D36;
+      --accent:#E8765A;
+      --accent-ink:#171512;
+      --accent-soft:#3A241E;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -16px rgba(0,0,0,.8);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171512;
+    --surface:#211E1B;
+    --surface-2:#2A2622;
+    --ink:#EFEBE5;
+    --ink-2:#A79F94;
+    --ink-3:#7E766C;
+    --line:#332E29;
+    --line-2:#443D36;
+    --accent:#E8765A;
+    --accent-ink:#171512;
+    --accent-soft:#3A241E;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 12px 30px -16px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  [hidden]{display:none !important}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Barlow","Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.5;
+    -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
+  }
+  button,input,textarea,select{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+  .app{max-width:520px;margin:0 auto;padding-inline:16px;padding-block:20px 40px}
+
+  header h1{
+    font-family:"Archivo Black","Barlow",sans-serif;font-weight:400;
+    font-size:25px;line-height:1.15;letter-spacing:-.015em;margin:0;text-wrap:balance;
+  }
+  header p{margin:6px 0 0;color:var(--ink-2);font-size:14.5px;max-width:44ch}
+
+  .stage{
+    margin-top:18px;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:14px;padding:12px;display:flex;justify-content:center;
+  }
+  canvas{
+    width:100%;max-width:400px;height:auto;display:block;cursor:pointer;
+    border-radius:4px;box-shadow:var(--shadow);
+  }
+  .hint{
+    margin:9px 2px 0;color:var(--ink-3);font-size:12.5px;text-align:center;
+    font-family:"Barlow Condensed",sans-serif;letter-spacing:.04em;text-transform:uppercase;
+  }
+
+  .actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:16px}
+  .btn{
+    border:1px solid transparent;border-radius:10px;padding:12px 16px;
+    font-weight:600;font-size:15px;cursor:pointer;background:var(--accent);color:var(--accent-ink);
+  }
+  .btn.ghost{background:transparent;border-color:var(--line-2);color:var(--ink-2);font-weight:500}
+  .btn:active{transform:translateY(1px)}
+
+  .group{
+    margin-top:10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;
+  }
+  .group > summary{
+    list-style:none;cursor:pointer;padding:13px 14px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-family:"Barlow Condensed",sans-serif;font-weight:700;
+    font-size:13px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-2);
+  }
+  .group > summary::-webkit-details-marker{display:none}
+  .group > summary::after{
+    content:"";width:8px;height:8px;flex:none;
+    border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
+    transform:rotate(45deg) translateY(-2px);transition:transform .18s ease;
+  }
+  .group[open] > summary::after{transform:rotate(225deg) translateY(-2px)}
+  .group-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:13px}
+
+  .field label{
+    display:block;margin-bottom:5px;
+    font-family:"Barlow Condensed",sans-serif;font-weight:600;
+    font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);
+  }
+  .field input[type=text], .field textarea{
+    width:100%;border:1px solid var(--line-2);border-radius:9px;background:var(--surface-2);
+    padding:10px 11px;resize:vertical;
+  }
+  .field textarea{min-height:74px;line-height:1.45}
+  .field.flash input, .field.flash textarea, .field.flash .photo{
+    border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);
+  }
+
+  .photo{
+    border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);
+    padding:10px;display:flex;flex-direction:column;gap:10px;
+  }
+  .photo-top{display:flex;align-items:center;gap:11px}
+  .thumb{
+    width:64px;height:64px;flex:none;border-radius:8px;object-fit:cover;
+    background:var(--line);border:1px solid var(--line-2);
+  }
+  .photo-pick{
+    border:1px solid var(--line-2);border-radius:9px;background:var(--surface);
+    padding:9px 13px;font-size:14.5px;font-weight:600;cursor:pointer;display:inline-block;
+  }
+  .photo-top div{min-width:0;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+  .photo-note{font-size:12.5px;color:var(--ink-3);line-height:1.35}
+  .photo input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .slider{display:flex;align-items:center;gap:10px}
+  .slider span{
+    font-family:"Barlow Condensed",sans-serif;font-size:12px;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--ink-3);flex:none;
+  }
+  .slider input{flex:1;min-width:0;accent-color:var(--accent)}
+
+  .notice{
+    margin-top:14px;border-radius:10px;padding:11px 13px;font-size:13.5px;line-height:1.5;
+    background:var(--accent-soft);color:var(--ink);
+  }
+
+  .sheet{
+    position:fixed;inset:0;z-index:40;background:rgba(20,18,16,.72);
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .sheet-inner{
+    background:var(--surface);border-radius:16px;padding:16px;
+    max-width:440px;width:100%;max-height:92vh;overflow:auto;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .sheet-inner h2{
+    margin:0;font-family:"Archivo Black",sans-serif;font-weight:400;font-size:18px;
+  }
+  .sheet-inner p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.5}
+  .sheet-inner img{width:100%;height:auto;border-radius:8px;box-shadow:var(--shadow)}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+<!--#artifact-split-->
+</head>
+<body>
+<!--#artifact-resume-->
+<div class="app">
+  <header>
+    <h1>Editor de capa de revista</h1>
+    <p>Troque as fotos e o que está escrito. O desenho, as cores e as letras continuam iguais aos do original.</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="capa" width="1520" height="2200" aria-label="Prévia da capa"></canvas>
+  </div>
+  <p class="hint">Toque na capa para editar aquele pedaço</p>
+
+  <div class="actions">
+    <button class="btn" type="button" id="export">Gerar imagem</button>
+    <button class="btn ghost" type="button" id="reset">Restaurar</button>
+  </div>
+
+  <div id="fields"></div>
+
+  <p class="notice" id="quota" hidden></p>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-inner">
+    <h2>Sua capa</h2>
+    <p id="sheet-help">Toque e segure na imagem e escolha “Salvar imagem” (ou “Adicionar às Fotos”).</p>
+    <img id="sheet-img" alt="Capa gerada" />
+    <button class="btn ghost" type="button" id="sheet-close">Fechar</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var W = 760, H = 1100, SCALE = 2;
+  var KEY = "capa.revista.v1";
+
+  var canvas = document.getElementById("capa");
+  var ctx = canvas.getContext("2d");
+
+  /* ------------------------------------------------------------------
+     Campos editáveis. A ordem aqui é a ordem dos formulários na tela.
+     ------------------------------------------------------------------ */
+  var GROUPS = [
+    { id:"topo", nome:"Topo e marca", campos:[
+      { k:"colecao",   r:"COLEÇÃO",          l:"Linha acima da marca" },
+      { k:"marcaA",    r:"Aprenda & Faça",   l:"Marca, em manuscrito" },
+      { k:"marcaC",    r:"RECEITAS",         l:"Marca, palavra grande" },
+      { k:"marcaD",    r:"EXTRA",            l:"Selo da marca" }
+    ]},
+    { id:"chamada", nome:"Chamada principal", campos:[
+      { k:"numMais",    r:"+",          l:"Sinal" },
+      { k:"numDe",      r:"de",         l:"Palavrinha" },
+      { k:"numero",     r:"170",        l:"Número grande" },
+      { k:"numPalavra", r:"RECEITAS",   l:"Palavra grande" }
+    ]},
+    { id:"topicos", nome:"Lista de tópicos", campos:[
+      { k:"topicos",    r:"CARNES\nMASSAS\nMUSSES\nTORTAS", l:"Um tópico por linha", tipo:"multi" },
+      { k:"topicosFim", r:"e muito mais!", l:"Fecho da lista" }
+    ]},
+    { id:"selo", nome:"Selo de preço", campos:[
+      { k:"seloTopo",    r:"Edição encadernada", l:"Linha de cima" },
+      { k:"seloNum",     r:"3",                  l:"Número" },
+      { k:"seloPalavra", r:"REVISTAS",           l:"Palavra" },
+      { k:"seloSo",      r:"só",                 l:"Antes do preço" },
+      { k:"seloPreco",   r:"R$ 3,99",            l:"Preço" }
+    ]},
+    { id:"destaque", nome:"Chamada lateral", campos:[
+      { k:"destTitulo", r:"Macarrão\nna pressão",       l:"Título", tipo:"multi" },
+      { k:"destTexto",  r:"Fica pronto em\n5 minutos!", l:"Texto", tipo:"multi" }
+    ]},
+    { id:"fotoPrincipal", nome:"Foto principal", campos:[
+      { k:"hero", l:"Foto grande do meio", tipo:"foto" }
+    ]},
+    { id:"especial", nome:"Seção especial", campos:[
+      { k:"espPre",    r:"Especial", l:"Palavra em manuscrito" },
+      { k:"espTitulo", r:"PAVÊS",    l:"Título da seção" }
+    ]},
+    { id:"fotosBaixo", nome:"Fotos de baixo", campos:[
+      { k:"foto1",    l:"Foto da esquerda", tipo:"foto" },
+      { k:"legenda1", r:"Pavê bicolor",     l:"Legenda da esquerda" },
+      { k:"foto2",    l:"Foto da direita",  tipo:"foto" },
+      { k:"legenda2", r:"Pavê cremoso",     l:"Legenda da direita" }
+    ]},
+    { id:"rodape", nome:"Rodapé e lombada", campos:[
+      { k:"rodape",  r:"Morango • Doce de leite • Prestígio • Abacaxi...", l:"Barra de baixo" },
+      { k:"lombada", r:"Aprenda & Faça Receitas Extra  •  Coleção  •  Ano 1  •  Nº 4", l:"Texto da lombada" }
+    ]}
+  ];
+
+  var TEXT_KEYS = [], PHOTO_KEYS = [], FIELD_OF = {};
+  GROUPS.forEach(function(g){
+    g.campos.forEach(function(c){
+      FIELD_OF[c.k] = { grupo:g.id, campo:c };
+      if (c.tipo === "foto") PHOTO_KEYS.push(c.k); else TEXT_KEYS.push(c.k);
+    });
+  });
+
+  function estadoPadrao(){
+    var t = {};
+    TEXT_KEYS.forEach(function(k){ t[k] = FIELD_OF[k].campo.r; });
+    var fotos = {}, corte = {};
+    PHOTO_KEYS.forEach(function(k){ fotos[k] = null; corte[k] = 50; });
+    return { texto:t, fotos:fotos, corte:corte };
+  }
+
+  var state = estadoPadrao();
+
+  /* ---------------- armazenamento ---------------- */
+  function carregar(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      var d = JSON.parse(raw);
+      if (!d) return;
+      TEXT_KEYS.forEach(function(k){
+        if (typeof d.texto === "object" && d.texto && typeof d.texto[k] === "string") state.texto[k] = d.texto[k];
+      });
+      PHOTO_KEYS.forEach(function(k){
+        if (d.fotos && typeof d.fotos[k] === "string") state.fotos[k] = d.fotos[k];
+        if (d.corte && typeof d.corte[k] === "number") state.corte[k] = d.corte[k];
+      });
+    } catch(e){}
+  }
+  function salvar(){
+    var aviso = document.getElementById("quota");
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      aviso.hidden = true;
+    } catch(e){
+      aviso.hidden = false;
+      aviso.textContent = "As fotos ficaram grandes demais para o navegador guardar. A capa continua funcionando agora, mas pode não voltar do jeito que está se você fechar a página. Gere a imagem para não perder.";
+    }
+  }
+
+  /* ---------------- desenho: utilidades ---------------- */
+  function fonte(familia, peso, tamanho){
+    return (peso || 400) + " " + tamanho + 'px "' + familia + '", sans-serif';
+  }
+
+  function medir(str, familia, peso, tamanho, espaco){
+    ctx.save();
+    ctx.font = fonte(familia, peso, tamanho);
+    if (espaco && "letterSpacing" in ctx) ctx.letterSpacing = espaco + "px";
+    var w = ctx.measureText(str).width;
+    ctx.restore();
+    return w;
+  }
+
+  /* Diminui o corpo da letra até o texto caber na largura pedida. */
+  function caber(str, familia, peso, tamanho, maxW, minimo){
+    var t = tamanho;
+    while (t > (minimo || 10) && medir(str, familia, peso, t) > maxW) t -= 1;
+    return t;
+  }
+
+  function T(str, x, y, o){
+    o = o || {};
+    if (str === "") return 0;
+    ctx.save();
+    ctx.font = fonte(o.familia || "Barlow Condensed", o.peso, o.tamanho || 30);
+    ctx.textAlign = o.align || "left";
+    ctx.textBaseline = o.baseline || "alphabetic";
+    if (o.espaco && "letterSpacing" in ctx) ctx.letterSpacing = o.espaco + "px";
+    if (o.sombra){
+      ctx.shadowColor = o.sombra;
+      ctx.shadowBlur = o.sombraBlur == null ? 10 : o.sombraBlur;
+      ctx.shadowOffsetY = o.sombraY == null ? 4 : o.sombraY;
+    }
+    if (o.contorno){
+      ctx.lineWidth = o.contornoW || 6;
+      ctx.strokeStyle = o.contorno;
+      ctx.lineJoin = "round";
+      ctx.miterLimit = 2;
+      ctx.strokeText(str, x, y);
+    }
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = o.cor || "#FFFFFF";
+    ctx.fillText(str, x, y);
+    var w = ctx.measureText(str).width;
+    ctx.restore();
+    return w;
+  }
+
+  function cantos(x, y, w, h, r){
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function linhas(str){
+    return String(str).split("\n");
+  }
+
+  /* ---------------- fotos ---------------- */
+  var cacheImg = {};
+  function pegarImg(k){
+    var src = state.fotos[k];
+    if (!src) return null;
+    var c = cacheImg[k];
+    if (c && c.src === src) return c.ok ? c.el : null;
+    var el = new Image();
+    cacheImg[k] = { src:src, el:el, ok:false };
+    el.onload = function(){
+      if (cacheImg[k] && cacheImg[k].src === src){ cacheImg[k].ok = true; desenhar(); atualizarMiniaturas(); }
+    };
+    el.src = src;
+    return null;
+  }
+
+  function moldura(k, x, y, w, h, r){
+    var img = pegarImg(k);
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.32)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 7;
+    cantos(x, y, w, h, r);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    cantos(x + 6, y + 6, w - 12, h - 12, Math.max(2, r - 5));
+    ctx.clip();
+    if (img){
+      var ix = x + 6, iy = y + 6, iw = w - 12, ih = h - 12;
+      var s = Math.max(iw / img.width, ih / img.height);
+      var dw = img.width * s, dh = img.height * s;
+      var foco = (state.corte[k] == null ? 50 : state.corte[k]) / 100;
+      ctx.drawImage(img, ix + (iw - dw) / 2, iy + (ih - dh) * foco, dw, dh);
+    } else {
+      var g = ctx.createLinearGradient(x, y, x, y + h);
+      g.addColorStop(0, "#F0E3CE");
+      g.addColorStop(1, "#D8BF9C");
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, w, h);
+      var cx = x + w / 2, cy = y + h / 2;
+      ctx.strokeStyle = "#A98A5E";
+      ctx.lineWidth = 3.5;
+      ctx.lineJoin = "round";
+      var bw = Math.min(58, w * 0.2), bh = bw * 0.72;
+      ctx.beginPath();
+      ctx.rect(cx - bw / 2, cy - bh / 2 - 8, bw, bh);
+      ctx.moveTo(cx - bw / 2 + bw * 0.28, cy - bh / 2 - 8);
+      ctx.lineTo(cx - bw / 2 + bw * 0.38, cy - bh / 2 - 16);
+      ctx.lineTo(cx - bw / 2 + bw * 0.62, cy - bh / 2 - 16);
+      ctx.lineTo(cx - bw / 2 + bw * 0.72, cy - bh / 2 - 8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy - 8 + bh * 0.06, bh * 0.26, 0, Math.PI * 2);
+      ctx.stroke();
+      T("Toque para escolher", cx, cy + bh / 2 + 22, {
+        familia:"Barlow Condensed", peso:700, tamanho:Math.max(15, Math.min(21, w * 0.07)),
+        cor:"#8A6C44", align:"center", espaco:.6
+      });
+    }
+    ctx.restore();
+    alvo(k, x, y, w, h);
+  }
+
+  /* ---------------- áreas tocáveis ---------------- */
+  var ALVOS = [];
+  function alvo(k, x, y, w, h){ ALVOS.push({ k:k, x:x, y:y, w:w, h:h }); }
+
+  /* ---------------- a capa ---------------- */
+  function desenhar(){
+    ALVOS.length = 0;
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var t = state.texto;
+
+    /* fundo -------------------------------------------------------- */
+    var gTopo = ctx.createLinearGradient(0, 0, 0, 300);
+    gTopo.addColorStop(0, "#E8281F");
+    gTopo.addColorStop(1, "#C6110D");
+    ctx.fillStyle = gTopo;
+    ctx.fillRect(0, 0, W, 300);
+
+    var gAzul = ctx.createLinearGradient(0, 296, 0, 1048);
+    gAzul.addColorStop(0, "#BEE7F8");
+    gAzul.addColorStop(.42, "#84CBEE");
+    gAzul.addColorStop(1, "#3C9BD2");
+    ctx.fillStyle = gAzul;
+    ctx.fillRect(0, 296, W, 752);
+
+    var brilho = ctx.createRadialGradient(380, 610, 30, 380, 610, 430);
+    brilho.addColorStop(0, "rgba(255,255,255,.5)");
+    brilho.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = brilho;
+    ctx.fillRect(0, 296, W, 752);
+
+    /* COLEÇÃO ------------------------------------------------------ */
+    T(t.colecao, 588, 36, {
+      familia:"Barlow Condensed", peso:700, tamanho:27, cor:"#FFFFFF",
+      align:"center", espaco:2.5
+    });
+    alvo("colecao", 440, 8, 300, 36);
+
+    /* caixa da marca ----------------------------------------------- */
+    var bx = 432, by = 48, bw = 308, bh = 142;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.3)";
+    ctx.shadowBlur = 14;
+    ctx.shadowOffsetY = 5;
+    cantos(bx, by, bw, bh, 12);
+    ctx.fillStyle = "#FFE21F";
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    cantos(bx, by, bw, bh, 12);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.stroke();
+    ctx.restore();
+
+    var tamMarcaA = caber(t.marcaA, "Yellowtail", 400, 44, bw - 34, 16);
+    T(t.marcaA, bx + bw / 2, by + 50, {
+      familia:"Yellowtail", tamanho:tamMarcaA, cor:"#123C96", align:"center"
+    });
+    alvo("marcaA", bx + 6, by + 6, bw - 12, 52);
+
+    var tamMarcaC = caber(t.marcaC, "Archivo Black", 400, 46, bw - 30, 14);
+    T(t.marcaC, bx + bw / 2, by + 104, {
+      familia:"Archivo Black", tamanho:tamMarcaC, cor:"#D4130E", align:"center", espaco:.5
+    });
+    alvo("marcaC", bx + 6, by + 62, bw - 12, 46);
+
+    var larguraD = medir(t.marcaD, "Archivo Black", 400, 20, 1.6) + 26;
+    cantos(bx + bw - larguraD - 12, by + 114, larguraD, 24, 6);
+    ctx.fillStyle = "#D4130E";
+    ctx.fill();
+    T(t.marcaD, bx + bw - larguraD / 2 - 12, by + 131, {
+      familia:"Archivo Black", tamanho:20, cor:"#FFFFFF", align:"center", espaco:1.6
+    });
+    alvo("marcaD", bx + bw - larguraD - 12, by + 112, larguraD, 28);
+
+    /* manchete ----------------------------------------------------- */
+    T(t.numMais, 30, 112, {
+      familia:"Anton", tamanho:62, cor:"#FFD400", contorno:"#8E0A07", contornoW:5
+    });
+    alvo("numMais", 22, 58, 62, 60);
+
+    T(t.numDe, 34, 162, {
+      familia:"Barlow Condensed", peso:700, tamanho:38, cor:"#FFFFFF",
+      contorno:"#8E0A07", contornoW:3
+    });
+    alvo("numDe", 22, 126, 62, 44);
+
+    var tamNum = caber(t.numero, "Anton", 400, 158, 318, 40);
+    T(t.numero, 96, 178, {
+      familia:"Anton", tamanho:tamNum, cor:"#FFD400", contorno:"#8E0A07", contornoW:7,
+      sombra:"rgba(0,0,0,.35)", sombraBlur:12, sombraY:5
+    });
+    alvo("numero", 90, 40, 330, 148);
+
+    var tamPal = caber(t.numPalavra, "Anton", 400, 88, 396, 26);
+    T(t.numPalavra, 26, 272, {
+      familia:"Anton", tamanho:tamPal, cor:"#FFFFFF", contorno:"#8E0A07", contornoW:6,
+      sombra:"rgba(0,0,0,.35)", sombraBlur:12, sombraY:5, espaco:.5
+    });
+    alvo("numPalavra", 20, 196, 404, 86);
+
+    /* tópicos ------------------------------------------------------ */
+    var itens = String(t.topicos).split(/[\n•,;]+/).map(function(s){ return s.trim(); })
+                  .filter(function(s){ return s.length; });
+    var tx = 436, ty = 212, maxT = 300, tamT = 27;
+    var linha = [], saida = [];
+    itens.forEach(function(it){
+      var teste = linha.concat([it]);
+      var largura = teste.reduce(function(a, s){
+        return a + medir("• " + s + "  ", "Barlow Condensed", 700, tamT);
+      }, 0);
+      if (largura > maxT && linha.length){ saida.push(linha); linha = [it]; }
+      else linha = teste;
+    });
+    if (linha.length) saida.push(linha);
+
+    saida.slice(0, 3).forEach(function(ln, i){
+      var cx = tx;
+      ln.forEach(function(it){
+        var lb = T("•", cx, ty + i * 33, {
+          familia:"Barlow Condensed", peso:700, tamanho:tamT, cor:"#FFD400"
+        });
+        cx += lb + 7;
+        cx += T(it, cx, ty + i * 33, {
+          familia:"Barlow Condensed", peso:700, tamanho:tamT, cor:"#FFFFFF", espaco:.4
+        }) + 14;
+      });
+    });
+    var alturaTop = Math.min(saida.length, 3) * 33;
+    T(t.topicosFim, tx, ty + alturaTop + 4, {
+      familia:"Barlow Condensed", peso:600, tamanho:25, cor:"#FFE9A0"
+    });
+    alvo("topicos", tx - 6, ty - 26, 312, alturaTop + 6);
+    alvo("topicosFim", tx - 6, ty + alturaTop - 20, 312, 30);
+
+    /* foto principal (fica atrás do selo e da chamada, como no original) */
+    moldura("hero", 34, 424, 692, 324, 76);
+
+    /* selo de preço ------------------------------------------------ */
+    var sx = 26, sy = 300, sw = 322, sh = 152;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.32)";
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 6;
+    cantos(sx, sy, sw, sh, 16);
+    ctx.fillStyle = "#D4120F";
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    cantos(sx + 3, sy + 3, sw - 6, sh - 6, 14);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.stroke();
+    ctx.restore();
+
+    var tamSeloTopo = caber(t.seloTopo, "Barlow Condensed", 700, 25, sw - 36, 11);
+    T(t.seloTopo, sx + sw / 2, sy + 32, {
+      familia:"Barlow Condensed", peso:700, tamanho:tamSeloTopo, cor:"#FFE066",
+      align:"center", espaco:.6
+    });
+    alvo("seloTopo", sx + 8, sy + 8, sw - 16, 32);
+
+    var tamSeloNum = caber(t.seloNum, "Anton", 400, 92, 92, 26);
+    T(t.seloNum, sx + 24, sy + 124, {
+      familia:"Anton", tamanho:tamSeloNum, cor:"#FFD400", contorno:"#7A0906", contornoW:5
+    });
+    alvo("seloNum", sx + 14, sy + 44, 96, 88);
+
+    var tamSeloPal = caber(t.seloPalavra, "Anton", 400, 54, 186, 16);
+    T(t.seloPalavra, sx + 122, sy + 96, {
+      familia:"Anton", tamanho:tamSeloPal, cor:"#FFFFFF", contorno:"#7A0906", contornoW:4
+    });
+    alvo("seloPalavra", sx + 116, sy + 48, 192, 56);
+
+    var larguraSo = T(t.seloSo, sx + 122, sy + 138, {
+      familia:"Barlow Condensed", peso:700, tamanho:27, cor:"#FFFFFF"
+    });
+    alvo("seloSo", sx + 116, sy + 110, larguraSo + 12, 36);
+
+    var tamPreco = caber(t.seloPreco, "Anton", 400, 48, 186 - larguraSo - 10, 15);
+    T(t.seloPreco, sx + 132 + larguraSo, sy + 140, {
+      familia:"Anton", tamanho:tamPreco, cor:"#FFD400", contorno:"#7A0906", contornoW:4
+    });
+    alvo("seloPreco", sx + 128 + larguraSo, sy + 106, sw - larguraSo - 140, 44);
+
+    /* chamada lateral ---------------------------------------------- */
+    var dx = 452, dy = 318;
+    linhas(t.destTitulo).slice(0, 3).forEach(function(ln, i){
+      var tam = caber(ln, "Anton", 400, 42, 282, 16);
+      T(ln, dx, dy + i * 44, {
+        familia:"Anton", tamanho:tam, cor:"#FFE000", contorno:"#0C4374", contornoW:4.5,
+        sombra:"rgba(0,0,0,.3)", sombraBlur:8, sombraY:3
+      });
+    });
+    var altDest = Math.min(linhas(t.destTitulo).length, 3) * 44;
+    alvo("destTitulo", dx - 8, dy - 40, 300, altDest + 6);
+
+    ctx.save();
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(dx, dy + altDest - 8);
+    ctx.lineTo(dx + 210, dy + altDest - 8);
+    ctx.stroke();
+    ctx.restore();
+
+    linhas(t.destTexto).slice(0, 3).forEach(function(ln, i){
+      var tam = caber(ln, "Barlow Condensed", 700, 27, 282, 12);
+      T(ln, dx, dy + altDest + 24 + i * 29, {
+        familia:"Barlow Condensed", peso:700, tamanho:tam, cor:"#FFFFFF",
+        contorno:"#0C4374", contornoW:4
+      });
+    });
+    alvo("destTexto", dx - 8, dy + altDest, 300,
+         Math.min(linhas(t.destTexto).length, 3) * 29 + 10);
+
+    /* seção especial ----------------------------------------------- */
+    T(t.espPre, 44, 790, {
+      familia:"Yellowtail", tamanho:caber(t.espPre, "Yellowtail", 400, 48, 280, 16),
+      cor:"#FFE000", sombra:"rgba(0,0,0,.4)", sombraBlur:8, sombraY:3
+    });
+    alvo("espPre", 36, 752, 290, 46);
+
+    var tamEsp = caber(t.espTitulo, "Anton", 400, 60, 300, 20);
+    T(t.espTitulo, 52, 844, {
+      familia:"Anton", tamanho:tamEsp, cor:"#FFFFFF", contorno:"#C2140F", contornoW:5,
+      sombra:"rgba(0,0,0,.35)", sombraBlur:8, sombraY:3
+    });
+    alvo("espTitulo", 40, 798, 310, 54);
+
+    /* código de barras (decorativo) -------------------------------- */
+    ctx.save();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(556, 760, 172, 76);
+    ctx.fillStyle = "#111111";
+    var semente = 7;
+    var bxx = 564;
+    while (bxx < 718){
+      semente = (semente * 1103515245 + 12345) % 2147483648;
+      var larg = 1.5 + (semente % 4);
+      ctx.fillRect(bxx, 768, larg, 52);
+      bxx += larg + 1.5 + ((semente >> 3) % 3);
+    }
+    T("7 891234 567890", 642, 831, {
+      familia:"Barlow Condensed", peso:600, tamanho:13, cor:"#111111", align:"center", espaco:.8
+    });
+    ctx.restore();
+
+    /* fotos de baixo ----------------------------------------------- */
+    moldura("foto1", 34, 858, 332, 152, 12);
+    moldura("foto2", 394, 858, 332, 152, 12);
+
+    [["legenda1", 34], ["legenda2", 394]].forEach(function(par){
+      var k = par[0], x = par[1];
+      cantos(x, 1014, 332, 36, 7);
+      ctx.fillStyle = "#C2140F";
+      ctx.fill();
+      var tam = caber(t[k], "Barlow Condensed", 700, 25, 310, 11);
+      T(t[k], x + 166, 1040, {
+        familia:"Barlow Condensed", peso:700, tamanho:tam, cor:"#FFFFFF",
+        align:"center", espaco:.5
+      });
+      alvo(k, x, 1014, 332, 38);
+    });
+
+    /* rodapé ------------------------------------------------------- */
+    var gBase = ctx.createLinearGradient(0, 1058, 0, H);
+    gBase.addColorStop(0, "#F4511E");
+    gBase.addColorStop(1, "#D01C16");
+    ctx.fillStyle = gBase;
+    ctx.fillRect(0, 1058, W, H - 1058);
+    ctx.fillStyle = "#FFD400";
+    ctx.fillRect(0, 1054, W, 4);
+
+    var sabores = String(t.rodape).split(/[•,;]+/).map(function(s){ return s.trim(); })
+                    .filter(function(s){ return s.length; });
+    var tamRod = 28;
+    function larguraRodape(tam){
+      return sabores.reduce(function(a, s, i){
+        return a + medir(s, "Barlow Condensed", 700, tam) + (i ? medir(" • ", "Barlow Condensed", 700, tam) : 0);
+      }, 0);
+    }
+    while (tamRod > 13 && larguraRodape(tamRod) > W - 40) tamRod -= 1;
+    var cursor = (W - larguraRodape(tamRod)) / 2;
+    sabores.forEach(function(s, i){
+      if (i){
+        cursor += T(" • ", cursor, 1090, {
+          familia:"Barlow Condensed", peso:700, tamanho:tamRod, cor:"#FFD400"
+        });
+      }
+      cursor += T(s, cursor, 1090, {
+        familia:"Barlow Condensed", peso:700, tamanho:tamRod,
+        cor:i % 2 ? "#FFE9A0" : "#FFFFFF"
+      });
+    });
+    alvo("rodape", 0, 1058, W, H - 1058);
+
+    /* lombada ------------------------------------------------------ */
+    ctx.save();
+    ctx.translate(20, 950);
+    ctx.rotate(-Math.PI / 2);
+    T(String(t.lombada).slice(0, 90), 0, 0, {
+      familia:"Barlow Condensed", peso:600, tamanho:16, cor:"#FFFFFF",
+      sombra:"rgba(0,0,0,.5)", sombraBlur:4, sombraY:0, espaco:.4
+    });
+    ctx.restore();
+    alvo("lombada", 4, 430, 26, 520);
+  }
+
+  /* ---------------- toque na capa ---------------- */
+  canvas.addEventListener("click", function(ev){
+    var r = canvas.getBoundingClientRect();
+    var x = (ev.clientX - r.left) / r.width * W;
+    var y = (ev.clientY - r.top) / r.height * H;
+    for (var i = ALVOS.length - 1; i >= 0; i--){
+      var a = ALVOS[i];
+      if (x >= a.x && x <= a.x + a.w && y >= a.y && y <= a.y + a.h){ irPara(a.k); return; }
+    }
+  });
+
+  function irPara(k){
+    var info = FIELD_OF[k];
+    if (!info) return;
+    var grupo = document.getElementById("g-" + info.grupo);
+    if (grupo) grupo.open = true;
+    var campo = document.getElementById("f-" + k);
+    if (!campo) return;
+    campo.scrollIntoView({ block:"center", behavior:"smooth" });
+    campo.classList.add("flash");
+    setTimeout(function(){ campo.classList.remove("flash"); }, 1400);
+    var entrada = campo.querySelector("input[type=text], textarea");
+    if (entrada) entrada.focus({ preventScroll:true });
+  }
+
+  /* ---------------- formulários ---------------- */
+  function montarCampos(){
+    var raiz = document.getElementById("fields");
+    raiz.innerHTML = "";
+    GROUPS.forEach(function(g, gi){
+      var det = document.createElement("details");
+      det.className = "group";
+      det.id = "g-" + g.id;
+      if (gi === 0) det.open = true;
+
+      var sum = document.createElement("summary");
+      sum.textContent = g.nome;
+      det.appendChild(sum);
+
+      var corpo = document.createElement("div");
+      corpo.className = "group-body";
+
+      g.campos.forEach(function(c){
+        var wrap = document.createElement("div");
+        wrap.className = "field";
+        wrap.id = "f-" + c.k;
+
+        var rot = document.createElement("label");
+        rot.textContent = c.l;
+        rot.setAttribute("for", "in-" + c.k);
+        wrap.appendChild(rot);
+
+        if (c.tipo === "foto"){
+          var caixa = document.createElement("div");
+          caixa.className = "photo";
+
+          var topo = document.createElement("div");
+          topo.className = "photo-top";
+
+          var mini = document.createElement("img");
+          mini.className = "thumb";
+          mini.id = "mini-" + c.k;
+          mini.alt = "";
+          topo.appendChild(mini);
+
+          var col = document.createElement("div");
+          var botao = document.createElement("label");
+          botao.className = "photo-pick";
+          botao.textContent = "Escolher foto";
+          botao.setAttribute("for", "in-" + c.k);
+          var arq = document.createElement("input");
+          arq.type = "file";
+          arq.accept = "image/*";
+          arq.id = "in-" + c.k;
+          botao.appendChild(arq);
+          col.appendChild(botao);
+          var nota = document.createElement("p");
+          nota.className = "photo-note";
+          nota.textContent = "A foto é recortada para preencher o espaço.";
+          col.appendChild(nota);
+          topo.appendChild(col);
+          caixa.appendChild(topo);
+
+          var sl = document.createElement("div");
+          sl.className = "slider";
+          var slRot = document.createElement("span");
+          slRot.textContent = "Enquadramento";
+          var slIn = document.createElement("input");
+          slIn.type = "range";
+          slIn.min = "0";
+          slIn.max = "100";
+          slIn.value = String(state.corte[c.k]);
+          slIn.setAttribute("aria-label", "Enquadramento da " + c.l.toLowerCase());
+          sl.appendChild(slRot);
+          sl.appendChild(slIn);
+          caixa.appendChild(sl);
+          wrap.appendChild(caixa);
+
+          arq.addEventListener("change", function(){
+            var f = arq.files && arq.files[0];
+            if (!f) return;
+            botao.textContent = "Carregando...";
+            lerFoto(f, function(dados){
+              botao.textContent = "Trocar foto";
+              if (!dados){ botao.textContent = "Não deu para ler essa imagem"; return; }
+              state.fotos[c.k] = dados;
+              salvar();
+              desenhar();
+              atualizarMiniaturas();
+            });
+          });
+          slIn.addEventListener("input", function(){
+            state.corte[c.k] = Number(slIn.value);
+            desenhar();
+          });
+          slIn.addEventListener("change", salvar);
+        } else {
+          var entrada;
+          if (c.tipo === "multi"){
+            entrada = document.createElement("textarea");
+            entrada.rows = 3;
+          } else {
+            entrada = document.createElement("input");
+            entrada.type = "text";
+          }
+          entrada.id = "in-" + c.k;
+          entrada.value = state.texto[c.k];
+          entrada.addEventListener("input", function(){
+            state.texto[c.k] = entrada.value;
+            desenhar();
+          });
+          entrada.addEventListener("change", salvar);
+          entrada.addEventListener("blur", salvar);
+          wrap.appendChild(entrada);
+        }
+
+        corpo.appendChild(wrap);
+      });
+
+      det.appendChild(corpo);
+      raiz.appendChild(det);
+    });
+    atualizarMiniaturas();
+  }
+
+  function atualizarMiniaturas(){
+    PHOTO_KEYS.forEach(function(k){
+      var mini = document.getElementById("mini-" + k);
+      if (!mini) return;
+      if (state.fotos[k]){ mini.src = state.fotos[k]; mini.hidden = false; }
+      else { mini.removeAttribute("src"); }
+    });
+  }
+
+  function lerFoto(file, cb){
+    var fr = new FileReader();
+    fr.onerror = function(){ cb(null); };
+    fr.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ cb(null); };
+      img.onload = function(){
+        var max = 1000;
+        var s = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * s));
+        c.height = Math.max(1, Math.round(img.height * s));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        try { cb(c.toDataURL("image/jpeg", .8)); } catch(e){ cb(null); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+
+  /* ---------------- gerar imagem ---------------- */
+  var folha = document.getElementById("sheet");
+  document.getElementById("export").addEventListener("click", function(){
+    var dados;
+    try { dados = canvas.toDataURL("image/jpeg", .92); } catch(e){ return; }
+    document.getElementById("sheet-img").src = dados;
+    folha.hidden = false;
+  });
+  document.getElementById("sheet-close").addEventListener("click", function(){ folha.hidden = true; });
+  folha.addEventListener("click", function(ev){ if (ev.target === folha) folha.hidden = true; });
+
+  document.getElementById("reset").addEventListener("click", function(){
+    state = estadoPadrao();
+    cacheImg = {};
+    salvar();
+    montarCampos();
+    desenhar();
+  });
+
+  /* ---------------- partida ---------------- */
+  carregar();
+  montarCampos();
+  desenhar();
+
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(function(){ desenhar(); });
+    setTimeout(desenhar, 1200);
+    setTimeout(desenhar, 3000);
+  }
+})();
+</script>
+<!--#artifact-end-->
+</body>
+</html>
