@@ -584,6 +584,48 @@
     return d;
   }
 
+  /* Volta completa. O slider sozinho daria ~1,5 grau por pixel de dedo,
+     então os atalhos existem para acertar os ângulos retos na unha. */
+  function controleGiro(valor, aoMudar){
+    var d = el("div");
+    var faixa = el("div", "faixa");
+    var i = document.createElement("input");
+    i.type = "range"; i.min = -180; i.max = 180; i.step = 1; i.value = valor;
+    i.setAttribute("aria-label", "Girar em graus");
+    var o = el("output", null, valor + "\u00b0");
+    faixa.appendChild(i); faixa.appendChild(o);
+    d.appendChild(faixa);
+
+    function aplicar(v){
+      v = ((v + 180) % 360 + 360) % 360 - 180;
+      if (v === -180) v = 180;
+      i.value = v;
+      o.textContent = v + "\u00b0";
+      aoMudar(v); desenhar(); guardar();
+    }
+    i.addEventListener("input", function(){
+      o.textContent = i.value + "\u00b0";
+      aoMudar(Number(i.value)); desenhar();
+    });
+    i.addEventListener("change", guardar);
+
+    var atalhos = el("div", "linha");
+    [["0\u00b0", 0], ["90\u00b0", 90], ["180\u00b0", 180], ["\u2212" + "90\u00b0", -90]].forEach(function(par){
+      var b = el("button", "btn ghost pequeno", par[0]);
+      b.type = "button";
+      b.addEventListener("click", function(){ aplicar(par[1]); });
+      atalhos.appendChild(b);
+    });
+    [["\u2212" + "15\u00b0", -15], ["+15\u00b0", 15]].forEach(function(par){
+      var b = el("button", "btn ghost pequeno", par[0]);
+      b.type = "button";
+      b.addEventListener("click", function(){ aplicar(Number(i.value) + par[1]); });
+      atalhos.appendChild(b);
+    });
+    d.appendChild(atalhos);
+    return d;
+  }
+
   function alternador(opcoes, atual, aoMudar){
     var d = el("div", "alternar");
     opcoes.forEach(function(op){
@@ -766,7 +808,7 @@
         c.align, function(v){ c.align = v; })));
       pn.appendChild(campo("Entrelinha", deslizante(70, 200, 1, Math.round(c.lh * 100), "%",
         function(v){ c.lh = v / 100; })));
-      pn.appendChild(campo("Girar", deslizante(-30, 30, 1, c.rot, "°", function(v){ c.rot = v; })));
+      pn.appendChild(campo("Girar", controleGiro(c.rot, function(v){ c.rot = v; })));
 
       var alterna = alternador(
         [{ id:"nao", nome:"Sem contorno" }, { id:"sim", nome:"Com contorno" }],
@@ -796,7 +838,7 @@
       }, true, c.original)));
       pn.appendChild(campo("Tamanho", deslizante(8, 100, 1, Math.round(c.largura * 100), "%",
         function(v){ c.largura = v / 100; })));
-      pn.appendChild(campo("Girar", deslizante(-30, 30, 1, c.rot, "°", function(v){ c.rot = v; })));
+      pn.appendChild(campo("Girar", controleGiro(c.rot, function(v){ c.rot = v; })));
       pn.appendChild(campo("Opacidade", deslizante(10, 100, 1, Math.round((c.opacidade == null ? 1 : c.opacidade) * 100), "%",
         function(v){ c.opacidade = v / 100; })));
     }

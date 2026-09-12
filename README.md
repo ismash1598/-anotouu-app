@@ -179,6 +179,17 @@ Formatos: cartaz (2:3), feed (4:5), quadrado (1:1) e story (9:16). As posições
 são guardadas em fração da largura e da altura, então trocar de formato
 reacomoda tudo em vez de quebrar o arranjo.
 
+## Giro
+
+Texto e logo giram a volta inteira, de −180° a 180°. O slider sozinho daria uns
+1,5° por pixel de dedo, o que não acerta ângulo reto, então junto dele vão os
+atalhos: 0°, 90°, 180°, −90° e passos de 15°. O valor é normalizado para a
+faixa, de forma que somar 15° em 175° dá −170° e não 190°.
+
+O acerto do toque gira o ponto no sentido inverso ao da camada antes de comparar
+com a caixa, então pegar e arrastar continua funcionando em qualquer ângulo,
+inclusive de cabeça para baixo.
+
 ## Fontes
 
 Oito fontes de cartaz, todas do Google Fonts. A **Luckiest Guy** é o padrão por
