@@ -5,6 +5,7 @@ um arquivo só, sem build e sem dependências: é abrir no navegador e usar.
 
 | Arquivo | O que é |
 | --- | --- |
+| `poster.html` | Editor de pôster: sua imagem de fundo, títulos e sua logo |
 | `capa.html` | Editor de capa de revista: troca as fotos e os textos e gera a imagem |
 | `index.html` | Bloco de notas: escrever, buscar e ajustar |
 
@@ -153,3 +154,66 @@ a letra até caber na largura da capa.
 Anton (números e manchetes), Archivo Black (marca), Yellowtail (os trechos em
 manuscrito) e Barlow Condensed (listas, preço, legendas e rodapé), via Google
 Fonts. O canvas é redesenhado quando as fontes terminam de carregar.
+
+---
+
+# Editor de pôster (`poster.html`)
+
+Diferente do editor de capa, aqui não há desenho fixo: você põe a imagem de
+fundo, escreve os títulos e posiciona a logo onde quiser.
+
+## O que dá para fazer
+
+- **Fundo** — sua imagem, com aproximar, escurecer ou clarear, e arrastar para
+  reposicionar. Sem imagem, fica o cinza de fundo.
+- **Textos** — quantos quiser. Fonte, tamanho, cor, alinhamento, entrelinha,
+  giro e contorno com cor e espessura próprias.
+- **Logo** — vem embutida no arquivo, então já aparece. Move, gira, muda de
+  tamanho, de opacidade e de cor. Dá para trocar por outra imagem e voltar.
+
+Arraste na arte para mover, ou toque para selecionar. A trilha de pastilhas
+acima do painel lista tudo que está no pôster e serve para alcançar o que
+estiver por baixo.
+
+Formatos: cartaz (2:3), feed (4:5), quadrado (1:1) e story (9:16). As posições
+são guardadas em fração da largura e da altura, então trocar de formato
+reacomoda tudo em vez de quebrar o arranjo.
+
+## Fontes
+
+Oito fontes de cartaz, todas do Google Fonts. A **Luckiest Guy** é o padrão por
+ser a mais próxima do lettering desenhado à mão da referência: traço grosso,
+contorno irregular, caixa alta. As outras: Bungee, Titan One, Lilita One, Anton,
+Archivo Black, Permanent Marker e Shrikhand.
+
+## Como a logo troca de cor
+
+A logo é guardada com RGB branco e o desenho todo no canal alfa — bem menor que
+o arquivo original, já que o RGB vira constante e comprime quase a zero.
+
+Para tingir, ela é desenhada num canvas de apoio e por cima vai um
+`fillRect` com `globalCompositeOperation = "source-in"`, que pinta só onde o
+alfa existe. O resultado guarda as bordas suaves, então a logo não serrilha em
+nenhuma cor. Cada combinação de imagem e cor fica em cache.
+
+O botão "Original" pula o tingimento e desenha a imagem como ela é — útil
+depois de trocar por uma logo colorida.
+
+## Posições e acerto do toque
+
+Cada camada guarda `x` e `y` como fração (0 a 1) e é ancorada pelo **centro**.
+O alinhamento do texto só decide como as linhas se distribuem dentro do bloco,
+não onde o bloco está — assim a caixa de toque continua centrada mesmo com o
+texto alinhado à esquerda.
+
+Para saber o que foi tocado, o ponto é girado no sentido inverso ao da camada e
+comparado com a caixa dela, com uma folga de 14 unidades para dedo. A lista é
+percorrida de trás para frente, então o que está por cima ganha.
+
+## Exportar
+
+A imagem sai em PNG com 1600px de largura. O contorno de seleção e as listras
+do fundo vazio existem só na tela: a exportação redesenha tudo com uma marca de
+"exportando" que os omite, tira a imagem e redesenha a tela de novo.
+
+No celular, toque e segure na imagem gerada e escolha "Salvar imagem".
