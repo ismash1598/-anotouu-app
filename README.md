@@ -5,7 +5,7 @@ um arquivo só, sem build e sem dependências: é abrir no navegador e usar.
 
 | Arquivo | O que é |
 | --- | --- |
-| `jogo.html` | Jogo de teste: o boneco anda pela grama com o d-pad da tela |
+| `jogo.html` | Jogo de teste: 12 classes andando pela grama com o d-pad da tela |
 | `poster.html` | Editor de pôster: sua imagem de fundo, títulos e sua logo |
 | `capa.html` | Editor de capa de revista: troca as fotos e os textos e gera a imagem |
 | `index.html` | Bloco de notas: escrever, buscar e ajustar |
@@ -264,6 +264,48 @@ O recorte foi feito assim:
    suave, alfa abaixo de 38 vira zero (poeira de compressão) e a folha é
    posterizada em 5 bits por canal — de 514 KB para 146 KB, sem mudança
    visível numa arte de branco, cinza e azul-marinho.
+
+## As classes
+
+`sprites-classes.png` traz as 12 classes da prancha de conceito: 4 colunas de
+direção (norte, leste, sul, oeste) × 12 linhas de classe, célula de 64 × 76.
+
+O recorte foi diferente do da folha base, porque a prancha é um render
+achatado, **sem canal alfa**. O fundo do cartão é um azul quase uniforme
+(6, 13, 24) e o contorno do boneco é preto puro, o que dá distância 43 entre
+os dois — o bastante para separar. O alfa sai de uma rampa sobre essa
+distância, em vez de um corte seco, senão fica auréola escura em volta do
+boneco quando ele pisa na grama.
+
+### A limitação que manda no resto
+
+A prancha só tem **uma pose por direção**. Não existe ciclo de caminhada para
+as classes, ao contrário da folha base, que veio com os 8 frames.
+
+Por isso o jogo trabalha com duas folhas de formatos diferentes, descritas em
+`BASE` e `CLASSE`:
+
+| | base | classes |
+| --- | --- | --- |
+| Colunas | 8 frames | 4 direções |
+| Linhas | 4 direções | 12 classes |
+| Célula | 59 × 97 | 64 × 76 |
+| Andar | 8 frames de verdade | passo procedural |
+| Escala | suavizada | vizinho mais próximo |
+
+O passo procedural das classes é feito no desenho: duas pisadas por casa,
+subindo cerca de 8% da casa e inclinando junto, com a sombra encolhendo e
+clareando enquanto o boneco está no ar. Sem isso a classe deslizaria pelo
+chão feito peça de tabuleiro.
+
+As duas folhas também são desenhadas com filtro diferente. A base é um render
+suave e sobe pouco de escala, então suavizar fica melhor; as classes são
+pixel art e sobem quase o dobro, então vão de vizinho mais próximo, para o
+pixel ficar quadrado em vez de borrado.
+
+Cada folha tem o próprio `pes`, a linha onde o boneco encosta no chão dentro
+da célula. O desenho ancora por ela, e não pela borda de baixo, para os dois
+tipos pisarem na mesma altura apesar das células serem de tamanhos diferentes.
 
 ## O passo
 
