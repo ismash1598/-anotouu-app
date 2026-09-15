@@ -5,6 +5,7 @@ um arquivo só, sem build e sem dependências: é abrir no navegador e usar.
 
 | Arquivo | O que é |
 | --- | --- |
+| `jogo.html` | Jogo de teste: o boneco anda pela grama com o d-pad da tela |
 | `poster.html` | Editor de pôster: sua imagem de fundo, títulos e sua logo |
 | `capa.html` | Editor de capa de revista: troca as fotos e os textos e gera a imagem |
 | `index.html` | Bloco de notas: escrever, buscar e ajustar |
@@ -228,3 +229,63 @@ do fundo vazio existem só na tela: a exportação redesenha tudo com uma marca 
 "exportando" que os omite, tira a imagem e redesenha a tela de novo.
 
 No celular, toque e segure na imagem gerada e escolha "Salvar imagem".
+
+---
+
+# Jogo de teste (`jogo.html`)
+
+O personagem anda casa por casa por um campo de grama, com o d-pad da tela ou
+pelo teclado. Visão de cima, câmera presa no boneco e o mapa correndo por
+baixo — o jeito do Tibia.
+
+Um toque dá um passo; segurar anda sem parar. O controle de passo vai de 140ms
+a 520ms por casa.
+
+## A folha de sprites
+
+`sprites-personagem.png` é a folha recortada da imagem original: 4 linhas
+(norte, leste, sul, oeste) × 8 frames, célula de 59 × 97, fundo transparente.
+Ela vai embutida no `jogo.html` como data URI, então o jogo é um arquivo só.
+
+O recorte foi feito assim:
+
+1. **Achar a grade** pela cabeça do boneco, que é clara e pouco saturada. O
+   brilho azul dos rótulos é saturado, então esse teste separa um do outro sem
+   pegar os crachás de direção nem o cabeçalho.
+2. **Isolar o boneco** por componente conexo sobre `alfa > 150`. O alfa separa
+   limpo (o histograma é quase todo 0 ou 255), enquanto filtrar por
+   luminância comia o manto escuro e fazia a altura variar de 66 a 135 px.
+   Pegar o maior blob que cruza o meio da célula descarta o número de baixo.
+3. **Alinhar pelos pés.** Cada frame entra na célula com a base no mesmo y e o
+   centro da caixa no meio. Sem isso o boneco sobe e desce a cada passo, porque
+   as poses de leste e oeste são mais estreitas que as de norte e sul. Medido:
+   a base varia 1 a 2 px dentro de cada linha, e o centro, 2 a 3 px.
+4. **Limpar e comprimir.** A máscara é dilatada 2 px para não cortar a borda
+   suave, alfa abaixo de 38 vira zero (poeira de compressão) e a folha é
+   posterizada em 5 bits por canal — de 514 KB para 146 KB, sem mudança
+   visível numa arte de branco, cinza e azul-marinho.
+
+## O passo
+
+Um passo leva o boneco de uma casa à vizinha em `duracaoPasso`
+milissegundos, interpolando a posição da câmera. Os 8 frames são distribuídos
+ao longo desse trajeto.
+
+O contador `ciclo` não zera entre passos: o frame sai de
+`(ciclo + t) * 8`, então o passo seguinte continua de onde a perna parou, em
+vez de recomeçar sempre no mesmo pé. Parado, volta ao frame 0.
+
+## A grama
+
+O campo é infinito e procedural. Um hash inteiro de `(x, y)` escolhe uma entre
+16 variantes pré-desenhadas, então a mesma casa é sempre igual e nada precisa
+ser guardado.
+
+Todas as variantes partem da **mesma cor de base**. Essa é a parte que importa:
+na primeira versão cada variante tinha o próprio tom, e o resultado desenhava a
+grade do mapa na tela, feito colcha de retalhos. A variação vem só do salpico
+miúdo, dos tufos e dos enfeites esparsos — flor, pedra e uma mancha de terra.
+
+As variantes são redesenhadas no tamanho final da casa a cada mudança de
+tamanho da janela, e depois só copiadas. Assim não há imagem escalada, que
+borraria.
